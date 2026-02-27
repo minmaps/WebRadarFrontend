@@ -1,0 +1,12 @@
+{
+  "name": "fivem-webradar",
+  "version": "1.0.0",
+  "description": "FiveM DMA Web Radar with Pusher on Vercel",
+  "main": "api/sync.js",
+  "dependencies": {
+    "pusher": "^5.1.3"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
