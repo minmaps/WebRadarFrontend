@@ -115,39 +115,73 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Basic map panning (Drag to pan)
-    let isDragging = false;
-    let startX, startY, scrollLeft, scrollTop;
-
+    // Transform variables for infinite pan & zoom
     const mapViewer = document.getElementById("map-container");
+    const mapWrapper = document.getElementById("map-wrapper");
+
+    let isDragging = false;
+    let startX, startY;
+
+    let scale = 3.5; // Zoom par défaut élevé (recommandé pour une map 8K)
+    let panX = 0;
+    let panY = 0;
+
+    function updateTransform() {
+        mapWrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    }
+
+    // Try to center the map on initial load (assuming the image is huge like 8000x8000)
+    window.addEventListener('load', () => {
+        const imgWidth = mapImage.naturalWidth || 8000;
+        const imgHeight = mapImage.naturalHeight || 8000;
+        panX = (window.innerWidth / 2) - (imgWidth * scale / 2);
+        panY = (window.innerHeight / 2) - (imgHeight * scale / 2);
+        updateTransform();
+    });
 
     mapViewer.addEventListener('mousedown', (e) => {
         isDragging = true;
-        mapViewer.style.cursor = 'grabbing';
-        startX = e.pageX - mapViewer.offsetLeft;
-        startY = e.pageY - mapViewer.offsetTop;
-        scrollLeft = mapViewer.scrollLeft;
-        scrollTop = mapViewer.scrollTop;
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
     });
 
     mapViewer.addEventListener('mouseleave', () => {
         isDragging = false;
-        mapViewer.style.cursor = 'grab';
     });
 
     mapViewer.addEventListener('mouseup', () => {
         isDragging = false;
-        mapViewer.style.cursor = 'grab';
     });
 
     mapViewer.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
         e.preventDefault();
-        const x = e.pageX - mapViewer.offsetLeft;
-        const y = e.pageY - mapViewer.offsetTop;
-        const walkX = (x - startX) * 2; // Scroll-fast
-        const walkY = (y - startY) * 2;
-        mapViewer.scrollLeft = scrollLeft - walkX;
-        mapViewer.scrollTop = scrollTop - walkY;
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        updateTransform();
     });
+
+    mapViewer.addEventListener('wheel', (e) => {
+        e.preventDefault(); // Prevent page scroll
+
+        const zoomIntensity = 0.002;
+        let zoomExp = Math.exp(-e.deltaY * zoomIntensity);
+        let newScale = scale * zoomExp;
+
+        // Limits
+        const minScale = 0.5;
+        const maxScale = 25.0; // High max scale for 8K map details
+        newScale = Math.max(minScale, Math.min(newScale, maxScale));
+
+        // Calculate new pan to zoom around the mouse cursor
+        const rect = mapViewer.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        panX = mouseX - (mouseX - panX) * (newScale / scale);
+        panY = mouseY - (mouseY - panY) * (newScale / scale);
+
+        scale = newScale;
+        updateTransform();
+    }, { passive: false });
 });

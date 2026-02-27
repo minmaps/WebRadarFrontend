@@ -1,4 +1,5 @@
-body, html {
+body,
+html {
     margin: 0;
     padding: 0;
     width: 100vw;
@@ -6,7 +7,8 @@ body, html {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #1a1b1e;
     color: white;
-    overflow: hidden; /* Hide scrollbars, we drag to pan */
+    overflow: hidden;
+    /* Hide scrollbars, we drag to pan */
 }
 
 /* UI Overlay (Top Left) */
@@ -27,7 +29,8 @@ body, html {
 #ui-overlay h2 {
     margin-top: 0;
     font-size: 1.2rem;
-    color: #4090ff; /* Bleu "DMA" */
+    color: #4090ff;
+    /* Bleu "DMA" */
     margin-bottom: 15px;
 }
 
@@ -41,9 +44,20 @@ body, html {
     color: #ffaa00;
 }
 
-.connected { color: #2ecc71; font-weight: bold; }
-.disconnected { color: #e74c3c; font-weight: bold; }
-.connecting { color: #f1c40f; font-weight: bold; }
+.connected {
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+.disconnected {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.connecting {
+    color: #f1c40f;
+    font-weight: bold;
+}
 
 .warning-text {
     font-size: 0.75rem !important;
@@ -59,16 +73,28 @@ body, html {
     overflow: hidden;
     position: relative;
     cursor: grab;
+    background-color: #0b1016;
+    /* Océan background */
 }
 
-#map-image {
+#map-container:active {
+    cursor: grabbing;
+}
+
+#map-wrapper {
     position: absolute;
     top: 0;
     left: 0;
-    width: 2000px; /* Taille par défaut, paramétrable ou responsive */
-    /* object-fit: contain; */
+    transform-origin: 0 0;
+    will-change: transform;
+}
+
+#map-image {
+    display: block;
+    /* We don't force width to let the 8K image take its natural HD size */
     z-index: 1;
-    pointer-events: none; /* Let drag pass through */
+    pointer-events: none;
+    /* Let drag pass through */
 }
 
 /* Blips (Joueurs/Entités) */
@@ -76,8 +102,8 @@ body, html {
     position: absolute;
     top: 0;
     left: 0;
-    width: 2000px;
-    height: 2000px; /* Same as map-image */
+    width: 100%;
+    height: 100%;
     pointer-events: none;
     z-index: 2;
 }
@@ -89,9 +115,11 @@ body, html {
     background-color: #e74c3c;
     border: 2px solid white;
     border-radius: 50%;
-    transform: translate(-50%, -50%); /* Centrer le point sur la coordonnée */
-    box-shadow: 0 0 5px rgba(0,0,0,0.5);
-    transition: left 0.5s linear, top 0.5s linear; /* Animation de mouvement ! */
+    transform: translate(-50%, -50%);
+    /* Centrer le point sur la coordonnée */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    transition: left 0.5s linear, top 0.5s linear;
+    /* Animation de mouvement ! */
 }
 
 .blip.low-hp {
