@@ -8,14 +8,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const blipsContainer = document.getElementById("blips-container");
     const mapImage = document.getElementById("map-image");
 
-    // Customization of map offsets for GTA V 
-    // Usually map top-left coordinate x,y down to bottom-right x,y
-    // Needs tweaking based on the specific map image used
-    // Standard GTA V Map Bounds for the most common 8K Atlas images
-    let MAP_WORLD_MIN_X = -4230;
-    let MAP_WORLD_MAX_X = 4500;
-    let MAP_WORLD_MIN_Y = -4140;
-    let MAP_WORLD_MAX_Y = 8420;
+    // Calibration Constants (computed from 2 reference points)
+    // Point A: In-game X: -930.37, Y: -3579.83 -> Image U: 3141, V: 7878
+    // Point B: In-game X: 54.13, Y: 7253.7 -> Image U: 3791, V: 748
+    const mapPixelWidth = 8192;
+    const mapPixelHeight = 8192;
+
+    const scaleX = 0.6602336; // (3791 - 3141) / (54.13 - (-930.37))
+    const scaleY = 0.6581419; // (748 - 7878) / (-3579.83 - 7253.7)
+
+    let offsetX = 3755.2615; // 3141 - (scaleX * -930.37)
+    let offsetY = 5521.9638; // 7878 + (scaleY * -3579.83)
 
     if (!room) {
         roomIdDisplay.textContent = "NO ROOM PROVIDED";
@@ -69,14 +72,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
     function worldToMapPercentage(x, y) {
-        // GTA V coordinates
-        // X ranges roughly from -4000 (left) to 4000 (right)
-        // Y ranges roughly from -4000 (bottom) to 8000 (top)
+        // Calculate pixel positions based on scale and offset
+        // X axis is identical.
+        let pxX = offsetX + (x * scaleX);
+        // GTA V Y axis points North (positive). Image V axis points South (positive).
+        let pxY = offsetY - (y * scaleY);
 
-        let pctX = (x - MAP_WORLD_MIN_X) / (MAP_WORLD_MAX_X - MAP_WORLD_MIN_X);
-
-        // GTA V Y axis is usually inverted relative to image Y (top is positive in GTA, 0 is top in img)
-        let pctY = 1.0 - ((y - MAP_WORLD_MIN_Y) / (MAP_WORLD_MAX_Y - MAP_WORLD_MIN_Y));
+        let pctX = pxX / mapPixelWidth;
+        let pctY = pxY / mapPixelHeight;
 
         return {
             x: Math.max(0, Math.min(1, pctX)) * 100,
@@ -85,15 +88,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Calibration mode
-    window.calibrateMapX = function (minX, maxX) {
-        if (minX) MAP_WORLD_MIN_X = minX;
-        if (maxX) MAP_WORLD_MAX_X = maxX;
-        console.log(`New X bounds: MIN ${MAP_WORLD_MIN_X}, MAX ${MAP_WORLD_MAX_X}`);
+    window.calibrateMapX = function (newOffset) {
+        if (newOffset !== undefined) offsetX = newOffset;
+        console.log(`New Offset X: ${offsetX}`);
     };
-    window.calibrateMapY = function (minY, maxY) {
-        if (minY) MAP_WORLD_MIN_Y = minY;
-        if (maxY) MAP_WORLD_MAX_Y = maxY;
-        console.log(`New Y bounds: MIN ${MAP_WORLD_MIN_Y}, MAX ${MAP_WORLD_MAX_Y}`);
+    window.calibrateMapY = function (newOffset) {
+        if (newOffset !== undefined) offsetY = newOffset;
+        console.log(`New Offset Y: ${offsetY}`);
     };
 
     // --- Map Navigation & Tracking ---
