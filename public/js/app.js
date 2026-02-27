@@ -207,7 +207,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Render Logic ---
     function renderBlips(peds) {
         blipsContainer.innerHTML = ''; // Clear old blips
-        entitiesCount.textContent = peds.length;
+
+        if (entitiesCount) {
+            entitiesCount.textContent = peds.length;
+        }
 
         if (peds.length > 0 && isTracking) {
             // We assume first ped is local player for tracking here. 
