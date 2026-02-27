@@ -66,6 +66,23 @@ html {
     font-style: italic;
 }
 
+#recenter-btn {
+    margin-top: 15px;
+    width: 100%;
+    padding: 10px;
+    background-color: #4090ff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+#recenter-btn:hover {
+    background-color: #2b70d4;
+}
+
 /* Map Container */
 #map-container {
     width: 100%;

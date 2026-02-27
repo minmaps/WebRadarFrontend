@@ -83,9 +83,138 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
+    // --- Map Navigation & Tracking ---
+    const mapViewer = document.getElementById("map-container");
+    const mapWrapper = document.getElementById("map-wrapper");
+    const recenterBtn = document.getElementById("recenter-btn");
+
+    let isDragging = false;
+    let startX, startY;
+
+    let scale = 3.5; // Default zoom level for 8K map
+    let panX = 0;
+    let panY = 0;
+
+    // Auto-tracking state (Waze-style)
+    let isTracking = true;
+    let localPlayerPos = null;
+
+    function disableTracking() {
+        if (isTracking) {
+            isTracking = false;
+            recenterBtn.style.display = "block"; // Show button
+        }
+    }
+
+    function enableTracking() {
+        isTracking = true;
+        recenterBtn.style.display = "none"; // Hide button
+        centerOnLocalPlayer();
+    }
+
+    if (recenterBtn) {
+        recenterBtn.addEventListener("click", enableTracking);
+    }
+
+    function updateTransform() {
+        mapWrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    }
+
+    function centerOnLocalPlayer() {
+        if (!localPlayerPos || !isTracking) return;
+
+        const imgWidth = mapImage.naturalWidth || 8000;
+        const imgHeight = mapImage.naturalHeight || 8000;
+
+        // Convert local player percentage to pixel on the 8K map
+        const playerPixelX = (localPlayerPos.x / 100) * imgWidth;
+        const playerPixelY = (localPlayerPos.y / 100) * imgHeight;
+
+        // Calculate pan needed to center this pixel on screen
+        // We use scale to ensure the center point is accurate regardless of zoom
+        panX = (window.innerWidth / 2) - (playerPixelX * scale);
+        panY = (window.innerHeight / 2) - (playerPixelY * scale);
+
+        updateTransform();
+    }
+
+    // Try to center the map on initial load (assuming the image is huge like 8000x8000)
+    window.addEventListener('load', () => {
+        const imgWidth = mapImage.naturalWidth || 8000;
+        const imgHeight = mapImage.naturalHeight || 8000;
+        panX = (window.innerWidth / 2) - (imgWidth * scale / 2);
+        panY = (window.innerHeight / 2) - (imgHeight * scale / 2);
+        updateTransform();
+    });
+
+    mapViewer.addEventListener('mousedown', (e) => {
+        if (e.target.closest('#ui-overlay')) return; // Ignore drag if clicking UI
+        isDragging = true;
+
+        // Remove scale factoring here, we just need raw delta from mousedown point
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
+    });
+
+    mapViewer.addEventListener('mouseleave', () => {
+        isDragging = false;
+    });
+
+    mapViewer.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    mapViewer.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+
+        // If user manually drags, break auto-tracking
+        disableTracking();
+
+        e.preventDefault();
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        updateTransform();
+    });
+
+    mapViewer.addEventListener('wheel', (e) => {
+        if (e.target.closest('#ui-overlay')) return; // Ignore wheel if on UI
+        e.preventDefault(); // Prevent page scroll
+
+        // If user manually zooms, break auto-tracking
+        disableTracking();
+
+        const zoomIntensity = 0.002;
+        let zoomExp = Math.exp(-e.deltaY * zoomIntensity);
+        let newScale = scale * zoomExp;
+
+        // Limits
+        const minScale = 0.5;
+        const maxScale = 25.0; // High max scale for 8K map details
+        newScale = Math.max(minScale, Math.min(newScale, maxScale));
+
+        // Calculate new pan to zoom exactly under the mouse cursor
+        const rect = mapViewer.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        panX = mouseX - (mouseX - panX) * (newScale / scale);
+        panY = mouseY - (mouseY - panY) * (newScale / scale);
+
+        scale = newScale;
+        updateTransform();
+    }, { passive: false });
+
+    // --- Render Logic ---
     function renderBlips(peds) {
         blipsContainer.innerHTML = ''; // Clear old blips
         entitiesCount.textContent = peds.length;
+
+        if (peds.length > 0 && isTracking) {
+            // We assume first ped is local player for tracking here. 
+            // Can be improved later by finding exactly the local player ID.
+            localPlayerPos = worldToMapPercentage(peds[0].x, peds[0].y);
+            centerOnLocalPlayer();
+        }
 
         peds.forEach(ped => {
             const pos = worldToMapPercentage(ped.x, ped.y);
@@ -95,7 +224,6 @@ document.addEventListener("DOMContentLoaded", () => {
             blip.style.left = `${pos.x}%`;
             blip.style.top = `${pos.y}%`;
 
-            // Si on transmet la santé ou le nom, on l'affiche
             if (ped.health !== undefined) {
                 if (ped.health <= 0) {
                     blip.classList.add("dead");
@@ -114,74 +242,4 @@ document.addEventListener("DOMContentLoaded", () => {
             blipsContainer.appendChild(blip);
         });
     }
-
-    // Transform variables for infinite pan & zoom
-    const mapViewer = document.getElementById("map-container");
-    const mapWrapper = document.getElementById("map-wrapper");
-
-    let isDragging = false;
-    let startX, startY;
-
-    let scale = 3.5; // Zoom par défaut élevé (recommandé pour une map 8K)
-    let panX = 0;
-    let panY = 0;
-
-    function updateTransform() {
-        mapWrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-    }
-
-    // Try to center the map on initial load (assuming the image is huge like 8000x8000)
-    window.addEventListener('load', () => {
-        const imgWidth = mapImage.naturalWidth || 8000;
-        const imgHeight = mapImage.naturalHeight || 8000;
-        panX = (window.innerWidth / 2) - (imgWidth * scale / 2);
-        panY = (window.innerHeight / 2) - (imgHeight * scale / 2);
-        updateTransform();
-    });
-
-    mapViewer.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        startX = e.clientX - panX;
-        startY = e.clientY - panY;
-    });
-
-    mapViewer.addEventListener('mouseleave', () => {
-        isDragging = false;
-    });
-
-    mapViewer.addEventListener('mouseup', () => {
-        isDragging = false;
-    });
-
-    mapViewer.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        e.preventDefault();
-        panX = e.clientX - startX;
-        panY = e.clientY - startY;
-        updateTransform();
-    });
-
-    mapViewer.addEventListener('wheel', (e) => {
-        e.preventDefault(); // Prevent page scroll
-
-        const zoomIntensity = 0.002;
-        let zoomExp = Math.exp(-e.deltaY * zoomIntensity);
-        let newScale = scale * zoomExp;
-
-        // Limits
-        const minScale = 0.5;
-        const maxScale = 25.0; // High max scale for 8K map details
-        newScale = Math.max(minScale, Math.min(newScale, maxScale));
-
-        // Calculate new pan to zoom around the mouse cursor
-        const rect = mapViewer.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        panX = mouseX - (mouseX - panX) * (newScale / scale);
-        panY = mouseY - (mouseY - panY) * (newScale / scale);
-
-        scale = newScale;
-        updateTransform();
-    }, { passive: false });
 });
