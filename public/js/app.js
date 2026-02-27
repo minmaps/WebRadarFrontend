@@ -11,10 +11,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Customization of map offsets for GTA V 
     // Usually map top-left coordinate x,y down to bottom-right x,y
     // Needs tweaking based on the specific map image used
-    const MAP_WORLD_MIN_X = -4000;
-    const MAP_WORLD_MAX_X = 4000;
-    const MAP_WORLD_MIN_Y = -4000;
-    const MAP_WORLD_MAX_Y = 8000;
+    // Standard GTA V Map Bounds for the most common 8K Atlas images
+    let MAP_WORLD_MIN_X = -4230;
+    let MAP_WORLD_MAX_X = 4500;
+    let MAP_WORLD_MIN_Y = -4140;
+    let MAP_WORLD_MAX_Y = 8420;
 
     if (!room) {
         roomIdDisplay.textContent = "NO ROOM PROVIDED";
@@ -82,6 +83,18 @@ document.addEventListener("DOMContentLoaded", () => {
             y: Math.max(0, Math.min(1, pctY)) * 100
         };
     }
+
+    // Calibration mode
+    window.calibrateMapX = function (minX, maxX) {
+        if (minX) MAP_WORLD_MIN_X = minX;
+        if (maxX) MAP_WORLD_MAX_X = maxX;
+        console.log(`New X bounds: MIN ${MAP_WORLD_MIN_X}, MAX ${MAP_WORLD_MAX_X}`);
+    };
+    window.calibrateMapY = function (minY, maxY) {
+        if (minY) MAP_WORLD_MIN_Y = minY;
+        if (maxY) MAP_WORLD_MAX_Y = maxY;
+        console.log(`New Y bounds: MIN ${MAP_WORLD_MIN_Y}, MAX ${MAP_WORLD_MAX_Y}`);
+    };
 
     // --- Map Navigation & Tracking ---
     const mapViewer = document.getElementById("map-container");
