@@ -8,6 +8,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const blipsContainer = document.getElementById("blips-container");
     const mapImage = document.getElementById("map-image");
 
+    const showDetectionZoneCheckbox = document.getElementById("show-detection-zone");
+    const detectionZone = document.getElementById("detection-zone");
+
+    if (showDetectionZoneCheckbox && detectionZone) {
+        showDetectionZoneCheckbox.addEventListener("change", (e) => {
+            detectionZone.style.display = e.target.checked ? "block" : "none";
+        });
+    }
+
     // Calibration Constants (computed from 2 reference points)
     // Point A: In-game X: -930.37, Y: -3579.83 -> Image U: 3141, V: 7878
     // Point B: In-game X: 54.13, Y: 7253.7 -> Image U: 3791, V: 748
@@ -272,8 +281,17 @@ document.addEventListener("DOMContentLoaded", () => {
         // ----------------------------------------
 
         if (peds.length > 0) {
+            const localPlayer = peds[0]; // Default to local player
+
+            // Update detection zone position
+            if (detectionZone && localPlayer) {
+                const localPos = worldToMapPercentage(localPlayer.x, localPlayer.y);
+                detectionZone.style.left = `${localPos.x}%`;
+                detectionZone.style.top = `${localPos.y}%`;
+            }
+
             const selectedId = playerFollowSelect ? playerFollowSelect.value : "local";
-            let targetPed = peds[0]; // Default to local player
+            let targetPed = localPlayer;
 
             if (selectedId !== "local") {
                 const foundPed = peds.find(p => p.id === selectedId);

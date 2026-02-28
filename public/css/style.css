@@ -100,6 +100,24 @@ html {
     border-color: #4090ff;
 }
 
+.checkbox-container {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-container input[type="checkbox"] {
+    margin: 0;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.checkbox-container label {
+    font-size: 0.9rem;
+    cursor: pointer;
+    user-select: none;
+}
+
 /* Map Container */
 #map-container {
     width: 100%;
@@ -129,6 +147,25 @@ html {
     z-index: 1;
     pointer-events: none;
     /* Let drag pass through */
+}
+
+/* Detection Zone */
+#detection-zone {
+    position: absolute;
+    width: 488.57px;
+    /* 370m * 2 * X scale */
+    height: 487.03px;
+    /* 370m * 2 * Y scale */
+    border: 2px dashed rgba(255, 170, 0, 0.6);
+    background-color: rgba(255, 170, 0, 0.1);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 1;
+    /* Below the blips which have higher z-index */
+    display: none;
+    transition: left 0.5s linear, top 0.5s linear;
+    /* Match blip transitions */
 }
 
 /* Blips (Joueurs/Entités) */

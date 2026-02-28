@@ -20,6 +20,10 @@
             <select id="player-follow-select">
                 <option value="local">Local Player</option>
             </select>
+            <div class="checkbox-container">
+                <input type="checkbox" id="show-detection-zone">
+                <label for="show-detection-zone">Show Detection Zone (370m)</label>
+            </div>
             <button id="recenter-btn" style="display: none;">Re-center on Player</button>
         </div>
     </div>
@@ -29,6 +33,7 @@
         <div id="map-wrapper">
             <!-- Remplacer "radar/gta_map.png" par l'image HD de la carte de GTA -->
             <img id="map-image" src="radar/gta_map.png" alt="Map">
+            <div id="detection-zone"></div>
             <div id="blips-container"></div>
         </div>
     </div>
