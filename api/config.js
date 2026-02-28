@@ -7,7 +7,6 @@ module.exports = async (req, res) => {
         return
     }
 
-    // Expose ONLY public keys
     res.status(200).json({
         pusherKey: process.env.NEXT_PUBLIC_PUSHER_KEY,
         pusherCluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER

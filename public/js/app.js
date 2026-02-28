@@ -24,17 +24,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Calibration Constants (computed from 2 reference points)
-    // Point A: In-game X: -930.37, Y: -3579.83 -> Image U: 3141, V: 7878
-    // Point B: In-game X: 54.13, Y: 7253.7 -> Image U: 3791, V: 748
     const mapPixelWidth = 8192;
     const mapPixelHeight = 8192;
 
-    const scaleX = 0.6602336; // (3791 - 3141) / (54.13 - (-930.37))
-    const scaleY = 0.6581419; // (748 - 7878) / (-3579.83 - 7253.7)
+    const scaleX = 0.6602336;
+    const scaleY = 0.6581419;
 
-    let offsetX = 3755.2615; // 3141 - (scaleX * -930.37)
-    let offsetY = 5521.9638; // 7878 + (scaleY * -3579.83)
+    let offsetX = 3755.2615;
+    let offsetY = 5521.9638;
 
     if (!room) {
         roomIdDisplay.textContent = "NO ROOM PROVIDED";
@@ -45,11 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
     roomIdDisplay.textContent = room;
     connectionStatus.textContent = "Connecting...";
     connectionStatus.className = "connecting";
-
-    // Initialize Pusher
-    // We get NEXT_PUBLIC_PUSHER_KEY and NEXT_PUBLIC_PUSHER_CLUSTER injected by Vercel's env somehow? 
-    // Actually, in vanilla JS static hosting on Vercel, we can't easily inject env vars into static JS files without a bundler.
-    // So we need to fetch the configuration from a simple API endpoint first!
 
     fetch('/api/config')
         .then(res => res.json())
@@ -99,10 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
     function worldToMapPercentage(x, y) {
-        // Calculate pixel positions based on scale and offset
-        // X axis is identical.
         let pxX = offsetX + (x * scaleX);
-        // GTA V Y axis points North (positive). Image V axis points South (positive).
         let pxY = offsetY - (y * scaleY);
 
         let pctX = pxX / mapPixelWidth;
@@ -114,7 +103,6 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // Calibration mode
     window.calibrateMapX = function (newOffset) {
         if (newOffset !== undefined) offsetX = newOffset;
         console.log(`New Offset X: ${offsetX}`);
@@ -124,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log(`New Offset Y: ${offsetY}`);
     };
 
-    // --- Map Navigation & Tracking ---
     const mapViewer = document.getElementById("map-container");
     const mapWrapper = document.getElementById("map-wrapper");
     const recenterBtn = document.getElementById("recenter-btn");
@@ -133,30 +120,29 @@ document.addEventListener("DOMContentLoaded", () => {
     let isDragging = false;
     let startX, startY;
 
-    let scale = 3.5; // Default zoom level for 8K map
+    let scale = 3.5;
     let panX = 0;
     let panY = 0;
 
-    // Auto-tracking state (Waze-style)
     let isTracking = true;
     let trackedPlayerPos = null;
 
     function disableTracking() {
         if (isTracking) {
             isTracking = false;
-            recenterBtn.style.display = "block"; // Show button
+            recenterBtn.style.display = "block";
         }
     }
 
     function enableTracking() {
         isTracking = true;
-        recenterBtn.style.display = "none"; // Hide button
+        recenterBtn.style.display = "none";
         centerOnTargetPlayer();
     }
 
     if (playerFollowSelect) {
         playerFollowSelect.addEventListener("change", () => {
-            enableTracking(); // Instantly center on the newly selected player
+            enableTracking();
         });
     }
 
@@ -174,19 +160,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const imgWidth = mapImage.naturalWidth || 8000;
         const imgHeight = mapImage.naturalHeight || 8000;
 
-        // Convert target player percentage to pixel on the 8K map
         const playerPixelX = (trackedPlayerPos.x / 100) * imgWidth;
         const playerPixelY = (trackedPlayerPos.y / 100) * imgHeight;
 
-        // Calculate pan needed to center this pixel on screen
-        // We use scale to ensure the center point is accurate regardless of zoom
         panX = (window.innerWidth / 2) - (playerPixelX * scale);
         panY = (window.innerHeight / 2) - (playerPixelY * scale);
 
         updateTransform();
     }
 
-    // Try to center the map on initial load (assuming the image is huge like 8000x8000)
     window.addEventListener('load', () => {
         const imgWidth = mapImage.naturalWidth || 8000;
         const imgHeight = mapImage.naturalHeight || 8000;
@@ -196,10 +178,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     mapViewer.addEventListener('mousedown', (e) => {
-        if (e.target.closest('#ui-overlay')) return; // Ignore drag if clicking UI
+        if (e.target.closest('#ui-overlay')) return;
         isDragging = true;
 
-        // Remove scale factoring here, we just need raw delta from mousedown point
         startX = e.clientX - panX;
         startY = e.clientY - panY;
     });
@@ -215,7 +196,6 @@ document.addEventListener("DOMContentLoaded", () => {
     mapViewer.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
 
-        // If user manually drags, break auto-tracking
         disableTracking();
 
         e.preventDefault();
@@ -225,22 +205,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     mapViewer.addEventListener('wheel', (e) => {
-        if (e.target.closest('#ui-overlay')) return; // Ignore wheel if on UI
-        e.preventDefault(); // Prevent page scroll
+        if (e.target.closest('#ui-overlay')) return;
+        e.preventDefault();
 
-        // If user manually zooms, break auto-tracking
         disableTracking();
 
         const zoomIntensity = 0.002;
         let zoomExp = Math.exp(-e.deltaY * zoomIntensity);
         let newScale = scale * zoomExp;
 
-        // Limits
         const minScale = 0.5;
-        const maxScale = 25.0; // High max scale for 8K map details
+        const maxScale = 25.0;
         newScale = Math.max(minScale, Math.min(newScale, maxScale));
 
-        // Calculate new pan to zoom exactly under the mouse cursor
         const rect = mapViewer.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
@@ -252,23 +229,19 @@ document.addEventListener("DOMContentLoaded", () => {
         updateTransform();
     }, { passive: false });
 
-    // --- Render Logic ---
     function renderBlips(peds) {
-        blipsContainer.innerHTML = ''; // Clear old blips
+        blipsContainer.innerHTML = '';
 
         if (entitiesCount) {
             entitiesCount.textContent = peds.length;
         }
 
-        // --- Player Selection Dropdown Logic ---
         if (playerFollowSelect) {
             const currentSelection = playerFollowSelect.value;
-            // Clear existing options except "local"
             playerFollowSelect.innerHTML = '<option value="local">Local Player</option>';
 
-            // Re-populate options
             peds.forEach((ped, index) => {
-                if (index === 0) return; // Skip local player (already covered by "local")
+                if (index === 0) return;
                 if (ped.name && ped.id !== "0") {
                     const option = document.createElement("option");
                     option.value = ped.id;
@@ -277,20 +250,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
-            // Restore selection if it still exists
             const optionExists = Array.from(playerFollowSelect.options).some(opt => opt.value === currentSelection);
             if (optionExists) {
                 playerFollowSelect.value = currentSelection;
             } else {
-                playerFollowSelect.value = "local"; // Fallback to local if player disconnected
+                playerFollowSelect.value = "local";
             }
         }
-        // ----------------------------------------
 
         if (peds.length > 0) {
-            const localPlayer = peds[0]; // Default to local player
+            const localPlayer = peds[0];
 
-            // Update detection zone position
             if (detectionZone && localPlayer) {
                 const localPos = worldToMapPercentage(localPlayer.x, localPlayer.y);
                 detectionZone.style.left = `${localPos.x}%`;

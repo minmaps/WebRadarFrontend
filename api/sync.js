@@ -9,7 +9,6 @@ const pusher = new Pusher({
 });
 
 module.exports = async (req, res) => {
-    // CORS Headers for testing (if calling from a browser, but here it's from C++)
     res.setHeader('Access-Control-Allow-Credentials', true)
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT')
@@ -32,12 +31,10 @@ module.exports = async (req, res) => {
     try {
         const data = req.body;
 
-        // Validate payload
         if (!data || !data.peds) {
             return res.status(400).json({ error: "Invalid payload format. Expected { peds: [...] }" });
         }
 
-        // Broadcast the update to the specific room channel
         await pusher.trigger(`webradar-${room}`, "update_map", data);
 
         return res.status(200).json({ success: true, message: "Data synchronized." });
