@@ -42,9 +42,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 cluster: config.pusherCluster
             });
 
+            let dataTimeout = null;
+
             pusher.connection.bind('connected', () => {
-                connectionStatus.textContent = "Connected";
-                connectionStatus.className = "connected";
+                connectionStatus.textContent = "Waiting for data...";
+                connectionStatus.className = "connecting";
             });
 
             pusher.connection.bind('disconnected', () => {
@@ -61,6 +63,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             channel.bind('update_map', (data) => {
                 if (data && data.peds) {
+                    connectionStatus.textContent = "Connected (Receiving Data)";
+                    connectionStatus.className = "connected";
+
+                    if (dataTimeout) clearTimeout(dataTimeout);
+                    dataTimeout = setTimeout(() => {
+                        connectionStatus.textContent = "Waiting for data...";
+                        connectionStatus.className = "connecting";
+                    }, 3000);
+
                     renderBlips(data.peds);
                 }
             });
