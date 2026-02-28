@@ -101,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const mapViewer = document.getElementById("map-container");
     const mapWrapper = document.getElementById("map-wrapper");
     const recenterBtn = document.getElementById("recenter-btn");
+    const playerFollowSelect = document.getElementById("player-follow-select");
 
     let isDragging = false;
     let startX, startY;
@@ -111,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Auto-tracking state (Waze-style)
     let isTracking = true;
-    let localPlayerPos = null;
+    let trackedPlayerPos = null;
 
     function disableTracking() {
         if (isTracking) {
@@ -123,7 +124,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function enableTracking() {
         isTracking = true;
         recenterBtn.style.display = "none"; // Hide button
-        centerOnLocalPlayer();
+        centerOnTargetPlayer();
+    }
+
+    if (playerFollowSelect) {
+        playerFollowSelect.addEventListener("change", () => {
+            enableTracking(); // Instantly center on the newly selected player
+        });
     }
 
     if (recenterBtn) {
@@ -134,15 +141,15 @@ document.addEventListener("DOMContentLoaded", () => {
         mapWrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     }
 
-    function centerOnLocalPlayer() {
-        if (!localPlayerPos || !isTracking) return;
+    function centerOnTargetPlayer() {
+        if (!trackedPlayerPos || !isTracking) return;
 
         const imgWidth = mapImage.naturalWidth || 8000;
         const imgHeight = mapImage.naturalHeight || 8000;
 
-        // Convert local player percentage to pixel on the 8K map
-        const playerPixelX = (localPlayerPos.x / 100) * imgWidth;
-        const playerPixelY = (localPlayerPos.y / 100) * imgHeight;
+        // Convert target player percentage to pixel on the 8K map
+        const playerPixelX = (trackedPlayerPos.x / 100) * imgWidth;
+        const playerPixelY = (trackedPlayerPos.y / 100) * imgHeight;
 
         // Calculate pan needed to center this pixel on screen
         // We use scale to ensure the center point is accurate regardless of zoom
@@ -226,11 +233,49 @@ document.addEventListener("DOMContentLoaded", () => {
             entitiesCount.textContent = peds.length;
         }
 
-        if (peds.length > 0 && isTracking) {
-            // We assume first ped is local player for tracking here. 
-            // Can be improved later by finding exactly the local player ID.
-            localPlayerPos = worldToMapPercentage(peds[0].x, peds[0].y);
-            centerOnLocalPlayer();
+        // --- Player Selection Dropdown Logic ---
+        if (playerFollowSelect) {
+            const currentSelection = playerFollowSelect.value;
+            // Clear existing options except "local"
+            playerFollowSelect.innerHTML = '<option value="local">Local Player</option>';
+
+            // Re-populate options
+            peds.forEach((ped, index) => {
+                if (index === 0) return; // Skip local player (already covered by "local")
+                if (ped.name && ped.id !== "0") {
+                    const option = document.createElement("option");
+                    option.value = ped.id;
+                    option.textContent = ped.name;
+                    playerFollowSelect.appendChild(option);
+                }
+            });
+
+            // Restore selection if it still exists
+            const optionExists = Array.from(playerFollowSelect.options).some(opt => opt.value === currentSelection);
+            if (optionExists) {
+                playerFollowSelect.value = currentSelection;
+            } else {
+                playerFollowSelect.value = "local"; // Fallback to local if player disconnected
+            }
+        }
+        // ----------------------------------------
+
+        if (peds.length > 0) {
+            const selectedId = playerFollowSelect ? playerFollowSelect.value : "local";
+            let targetPed = peds[0]; // Default to local player
+
+            if (selectedId !== "local") {
+                const foundPed = peds.find(p => p.id === selectedId);
+                if (foundPed) {
+                    targetPed = foundPed;
+                }
+            }
+
+            trackedPlayerPos = worldToMapPercentage(targetPed.x, targetPed.y);
+
+            if (isTracking) {
+                centerOnTargetPlayer();
+            }
         }
 
         peds.forEach(ped => {

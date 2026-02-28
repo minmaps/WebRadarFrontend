@@ -83,6 +83,23 @@ html {
     background-color: #2b70d4;
 }
 
+#player-follow-select {
+    width: 100%;
+    margin-top: 15px;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: 1px solid #444;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+#player-follow-select:focus {
+    outline: none;
+    border-color: #4090ff;
+}
+
 /* Map Container */
 #map-container {
     width: 100%;
