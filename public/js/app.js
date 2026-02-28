@@ -10,6 +10,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const showDetectionZoneCheckbox = document.getElementById("show-detection-zone");
     const detectionZone = document.getElementById("detection-zone");
+    const mapTypeSelect = document.getElementById("map-type-select");
+
+    if (mapTypeSelect && mapImage) {
+        mapTypeSelect.addEventListener("change", (e) => {
+            mapImage.src = e.target.value;
+        });
+    }
 
     if (showDetectionZoneCheckbox && detectionZone) {
         showDetectionZoneCheckbox.addEventListener("change", (e) => {
